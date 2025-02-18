@@ -30,7 +30,7 @@ namespace PeopleDirectory.Application.DTOs
         public required DateTime DateOfBirth { get; init; }
 
         [Range(1, int.MaxValue, ErrorMessageResourceName = "InvalidCity", ErrorMessageResourceType = typeof(ValidationMessages))]
-        public required int CityId { get; init; }
+        public required string City { get; init; }
         public List<PhoneNumberDto>? PhoneNumbers { get; init; }
     }
 }

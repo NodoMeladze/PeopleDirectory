@@ -1,20 +1,27 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using PeopleDirectory.Application.DTOs;
 using PeopleDirectory.Application.Interfaces;
+using PeopleDirectory.Application.Resources;
 using PeopleDirectory.Domain.Entities;
+using PeopleDirectory.Domain.Exceptions;
 using PeopleDirectory.Domain.Interfaces;
 
 namespace PeopleDirectory.Application.Services
 {
-    public class PersonService(IPersonRepository personRepository, IUnitOfWork unitOfWork, IWebHostEnvironment environment) : IPersonService
+    public class PersonService(IPersonRepository personRepository, ICityRepository cityRepository, IUnitOfWork unitOfWork, IWebHostEnvironment environment) : IPersonService
     {
         public async Task<int> AddPersonAsync(AddPersonDto dto)
         {
             var existingPerson = await personRepository.GetByPersonalIdAsync(dto.PersonalId);
+            
             if (existingPerson != null)
             {
-                throw new Exception("A person with this Personal ID already exists.");
+                throw new AlreadyExists(ValidationMessages.PersonAlreadyExists);
             }
+
+            var city = await cityRepository.GetByNameAsync(dto.City)
+                ?? throw new NotFoundException(ValidationMessages.InvalidCity);
 
             var person = new Person
             {
@@ -23,7 +30,7 @@ namespace PeopleDirectory.Application.Services
                 Gender = dto.Gender,
                 PersonalId = dto.PersonalId,
                 DateOfBirth = dto.DateOfBirth,
-                CityId = dto.CityId
+                CityId = city.Id
             };
 
             if (dto.PhoneNumbers != null)
@@ -42,8 +49,8 @@ namespace PeopleDirectory.Application.Services
 
         public async Task<PersonDto?> GetPersonByIdAsync(int id)
         {
-            var person = await personRepository.GetPersonFullDetailsAsync(id);
-            if (person == null) return null;
+            var person = await personRepository.GetPersonFullDetailsAsync(id)
+                ?? throw new NotFoundException(ValidationMessages.PersonDoesNotExist);
 
             return new PersonDto
             {
@@ -67,27 +74,75 @@ namespace PeopleDirectory.Application.Services
             };
         }
 
-        public async Task<string?> UploadPersonPhotoAsync(int personId, byte[] fileBytes, string fileName)
+        public async Task EditPersonAsync(int id, EditPersonDto dto)
         {
-            var person = await personRepository.GetByIdAsync(personId);
-            if (person == null)
+            var person = await personRepository.GetPersonFullDetailsAsync(id)
+                ?? throw new NotFoundException(ValidationMessages.PersonDoesNotExist);
+
+            var city = await cityRepository.GetByNameAsync(dto.City)
+                ?? throw new NotFoundException(ValidationMessages.InvalidCity);
+
+            if (person.PersonalId != dto.PersonalId)
             {
-                return null;
+                var existingPerson = await personRepository.GetByPersonalIdAsync(dto.PersonalId);
+                if (existingPerson != null && existingPerson.Id != id)
+                {
+                    throw new AlreadyExists(ValidationMessages.PersonAlreadyExists);
+                }
             }
+
+            person.FirstName = dto.FirstName;
+            person.LastName = dto.LastName;
+            person.Gender = dto.Gender;
+            person.PersonalId = dto.PersonalId;
+            person.DateOfBirth = dto.DateOfBirth;
+            person.CityId = city.Id;
+            person.ModifiedDate = DateTime.UtcNow;
+
+            if (dto.PhoneNumbers != null)
+            {
+                person.PhoneNumbers.Clear();
+                var phoneNumbers = dto.PhoneNumbers.Select(pn => new PhoneNumber
+                {
+                    Type = pn.Type,
+                    Number = pn.Number,
+                    PersonId = person.Id
+                }).ToList();
+                person.PhoneNumbers = phoneNumbers;
+            }
+
+            await unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task DeletePersonAsync(int id)
+        {
+            var person = await personRepository.GetByIdAsync(id)
+                ?? throw new NotFoundException(ValidationMessages.PersonDoesNotExist);
+
+            person.IsDeleted = true;
+            person.ModifiedDate = DateTime.UtcNow;
+
+            await unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task<string?> UploadPersonPhotoAsync(int id, IFormFile file)
+        {
+            var person = await personRepository.GetByIdAsync(id)
+                ?? throw new NotFoundException(ValidationMessages.PersonDoesNotExist);
 
             var uploadDirectory = Path.Combine(environment.WebRootPath, "Uploads");
-            if (!Directory.Exists(uploadDirectory))
-            {
-                Directory.CreateDirectory(uploadDirectory);
-            }
+            Directory.CreateDirectory(uploadDirectory);
 
-            var fileExtension = Path.GetExtension(fileName);
+            var fileExtension = Path.GetExtension(file.FileName);
             var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
             var filePath = Path.Combine(uploadDirectory, uniqueFileName);
 
-            await File.WriteAllBytesAsync(filePath, fileBytes);
+            await using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
 
-            person.PhotoPath = $"/Uploads/{uniqueFileName}";
+            person.PhotoPath = $"/uploads/{uniqueFileName}";
             await unitOfWork.SaveChangesAsync();
 
             return person.PhotoPath;
@@ -95,19 +150,15 @@ namespace PeopleDirectory.Application.Services
 
         public async Task<bool> AddRelatedPersonAsync(int personId, RelatedPersonDto relatedPersonDto)
         {
-            var person = await personRepository.GetByIdAsync(personId);
-            var relatedPerson = await personRepository.GetByIdAsync(relatedPersonDto.RelatedPersonId);
+            var person = await personRepository.GetPersonFullDetailsAsync(personId);
+            var relatedPerson = await personRepository.GetPersonFullDetailsAsync(relatedPersonDto.RelatedPersonId);
 
-            if (person == null || relatedPerson == null || personId == relatedPersonDto.RelatedPersonId)
-            {
-                return false;
-            }
+            if (person == null || relatedPerson == null || personId == relatedPersonDto.RelatedPersonId) return false;
+            
 
             bool alreadyExists = person.RelatedPersons.Any(rp => rp.RelatedPersonId == relatedPersonDto.RelatedPersonId);
-            if (alreadyExists)
-            {
-                return false;
-            }
+            if (alreadyExists) return false;
+            
 
             person.RelatedPersons.Add(new RelatedPerson
             {
@@ -122,29 +173,26 @@ namespace PeopleDirectory.Application.Services
 
         public async Task<bool> RemoveRelatedPersonAsync(int personId, int relatedPersonId)
         {
-            var person = await personRepository.GetByIdAsync(personId);
-            if (person == null)
-            {
-                return false;
-            }
+            var person = await personRepository.GetPersonFullDetailsAsync(personId);
+            if (person == null) return false;
+
 
             var relatedPerson = person.RelatedPersons.FirstOrDefault(rp => rp.RelatedPersonId == relatedPersonId);
-            if (relatedPerson == null)
-            {
-                return false;
-            }
+            if (relatedPerson == null) return false;
 
             person.RelatedPersons.Remove(relatedPerson);
+
             await unitOfWork.SaveChangesAsync();
+            
             return true;
         }
 
         public async Task<List<PersonRelationsReportDto>> GetRelatedPersonsReportAsync()
         {
-            var persons = await personRepository.GetAllAsync();
+            var persons = await personRepository.GetAllPersonsAsync();
 
             var reportData = persons
-                .Where(p => p.RelatedPersons.Any())
+                .Where(p => p.RelatedPersons.Count != 0)
                 .Select(p => new PersonRelationsReportDto
                 {
                     PersonId = p.Id,
@@ -164,9 +212,9 @@ namespace PeopleDirectory.Application.Services
             return reportData;
         }
 
-        public async Task<(List<PersonDto> Persons, int TotalCount)> SearchPersonsAsync(string? firstName, string? lastName, string? personalId, int pageNumber, int pageSize, bool detailed = false)
+        public async Task<(List<PersonDto> Persons, int TotalCount)> SearchPersonsAsync(SearchPersonQueryDto query)
         {
-            var (persons, totalCount) = await personRepository.SearchPersonsAsync(firstName, lastName, personalId, pageNumber, pageSize, detailed);
+            var (persons, totalCount) = await personRepository.SearchPersonsAsync(query.FirstName, query.LastName, query.PersonalId, query.PageNumber, query.PageSize, query.Detailed);
 
             var personDtos = persons.Select(p => new PersonDto
             {
@@ -190,62 +238,6 @@ namespace PeopleDirectory.Application.Services
             }).ToList();
 
             return (personDtos, totalCount);
-        }
-
-        public async Task<bool> EditPersonAsync(int id, EditPersonDto dto)
-        {
-            var person = await personRepository.GetByIdAsync(id);
-            if (person == null)
-            {
-                return false;
-            }
-
-            if (person.PersonalId != dto.PersonalId)
-            {
-                var existingPerson = await personRepository.GetByPersonalIdAsync(dto.PersonalId);
-                if (existingPerson != null && existingPerson.Id != id)
-                {
-                    throw new Exception("A person with this Personal ID already exists.");
-                }
-            }
-
-            person.FirstName = dto.FirstName;
-            person.LastName = dto.LastName;
-            person.Gender = dto.Gender;
-            person.PersonalId = dto.PersonalId;
-            person.DateOfBirth = dto.DateOfBirth;
-            person.CityId = dto.CityId;
-            person.ModifiedDate = DateTime.UtcNow;
-
-            if (dto.PhoneNumbers != null)
-            {
-                person.PhoneNumbers.Clear();
-                var phoneNumbers = dto.PhoneNumbers.Select(pn => new PhoneNumber
-                {
-                    Type = pn.Type,
-                    Number = pn.Number,
-                    PersonId = person.Id
-                }).ToList();
-                person.PhoneNumbers = phoneNumbers;
-            }
-
-            await unitOfWork.SaveChangesAsync();
-            return true;
-        }
-
-        public async Task<bool> DeletePersonAsync(int id)
-        {
-            var person = await personRepository.GetByIdAsync(id);
-            if (person == null)
-            {
-                return false;
-            }
-
-            person.IsDeleted = true;
-            person.ModifiedDate = DateTime.UtcNow;
-
-            await unitOfWork.SaveChangesAsync();
-            return true;
         }
     }
 }

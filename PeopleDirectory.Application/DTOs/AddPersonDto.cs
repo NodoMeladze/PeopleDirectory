@@ -18,6 +18,7 @@ namespace PeopleDirectory.Application.DTOs
         public required string LastName { get; init; }
 
         [Required(ErrorMessageResourceName = "InvalidGender", ErrorMessageResourceType = typeof(ValidationMessages))]
+        [EnumDataType(typeof(Gender), ErrorMessageResourceName = "InvalidGender", ErrorMessageResourceType = typeof(ValidationMessages))]
         public required Gender Gender { get; init; }
 
         [Required(ErrorMessageResourceName = "PersonalIdRequired", ErrorMessageResourceType = typeof(ValidationMessages))]
@@ -28,9 +29,7 @@ namespace PeopleDirectory.Application.DTOs
         [Required(ErrorMessageResourceName = "DateOfBirthRequired", ErrorMessageResourceType = typeof(ValidationMessages))]
         [MinAge(18, ErrorMessageResourceName = "MinAge18", ErrorMessageResourceType = typeof(ValidationMessages))]
         public required DateTime DateOfBirth { get; init; }
-
-        [Range(1, int.MaxValue, ErrorMessageResourceName = "InvalidCity", ErrorMessageResourceType = typeof(ValidationMessages))]
-        public required int CityId { get; init; }
+        public required string City { get; init; }
         public List<PhoneNumberDto>? PhoneNumbers { get; init; }
     }
 }

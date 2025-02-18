@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Text.Json;
+﻿using PeopleDirectory.Domain.Exceptions;
 
 namespace PeopleDirectory.API.Middlewares
 {
@@ -14,7 +13,7 @@ namespace PeopleDirectory.API.Middlewares
             _logger = logger;
         }
 
-        public async Task Invoke(HttpContext context)
+        public async Task InvokeAsync(HttpContext context)
         {
             try
             {
@@ -22,19 +21,39 @@ namespace PeopleDirectory.API.Middlewares
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled Exception: {Message}", ex.Message);
-                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                context.Response.ContentType = "application/json";
-
-                var errorResponse = new
-                {
-                    Status = 500,
-                    Message = "An unexpected error occurred. Please try again later."
-                };
-
-                var jsonResponse = JsonSerializer.Serialize(errorResponse);
-                await context.Response.WriteAsync(jsonResponse);
+                await HandleExceptionAsync(context, ex);
             }
+        }
+
+        private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        {
+            _logger.LogError(exception, "An error occurred");
+
+            if (exception is BadHttpRequestException badRequestEx && badRequestEx.InnerException is ValidationException validationEx)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    Error = validationEx.Message,
+                });
+                return;
+            }
+
+            var response = new
+            {
+                Error = exception.Message
+            };
+
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = exception switch
+            {
+                NotFoundException => StatusCodes.Status404NotFound,
+                AlreadyExists => StatusCodes.Status400BadRequest,
+                ValidationException => StatusCodes.Status400BadRequest,
+                _ => StatusCodes.Status500InternalServerError
+            };
+
+            await context.Response.WriteAsJsonAsync(response);
         }
     }
 }
