@@ -22,15 +22,15 @@ namespace PeopleDirectory.Infrastructure.Configurations
                    .HasForeignKey(p => p.CityId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasMany(p => p.PhoneNumbers)
-                   .WithOne(pn => pn.Person)
-                   .HasForeignKey(pn => pn.PersonId)
-                   .OnDelete(DeleteBehavior.Cascade);
+            //builder.HasMany(p => p.PhoneNumbers)
+            //       .WithOne(pn => pn.Person)
+            //       .HasForeignKey(pn => pn.PersonId)
+            //       .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(p => p.RelatedPersons)
-                   .WithOne(rp => rp.Person)
-                   .HasForeignKey(rp => rp.PersonId)
-                   .OnDelete(DeleteBehavior.Restrict);
+            //builder.HasMany(p => p.RelatedPersons)
+            //       .WithOne(rp => rp.Person)
+            //       .HasForeignKey(rp => rp.PersonId)
+            //       .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

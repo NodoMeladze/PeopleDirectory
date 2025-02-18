@@ -4,10 +4,10 @@ namespace PeopleDirectory.Domain.Entities
 {
     public class RelatedPerson : EntityBase
     {
-        public ConnectionType ConnectionType { get; set; }
-        public int PersonId { get; set; }
+        public required ConnectionType ConnectionType { get; set; }
+        public required int PersonId { get; set; }
         public Person? Person { get; set; }
-        public int RelatedPersonId { get; set; }
+        public required int RelatedPersonId { get; set; }
         public Person? Related { get; set; }
     }
 }

@@ -20,7 +20,7 @@ namespace PeopleDirectory.Infrastructure.Configurations
             builder.HasOne(rp => rp.Person)
                    .WithMany(p => p.RelatedPersons)
                    .HasForeignKey(rp => rp.PersonId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(rp => rp.Related)
                    .WithMany()

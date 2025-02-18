@@ -153,6 +153,18 @@
   <data name="PersonalIdRequired" xml:space="preserve">
     <value>Personal ID is required.</value>
   </data>
+  <data name="PersonAlreadyExists" xml:space="preserve">
+    <value>Person already exists.</value>
+  </data>
+  <data name="PersonDeleted" xml:space="preserve">
+    <value>Person deleted successfully.</value>
+  </data>
+  <data name="PersonDoesNotExist" xml:space="preserve">
+    <value>Person does not exist.</value>
+  </data>
+  <data name="PersonUpdated" xml:space="preserve">
+    <value>Person updated successfully.</value>
+  </data>
   <data name="PhoneNumberLength" xml:space="preserve">
     <value>Phone number must be between 4 and 50 characters.</value>
   </data>
@@ -161,6 +173,9 @@
   </data>
   <data name="PhoneTypeRequired" xml:space="preserve">
     <value>Phone type is required.</value>
+  </data>
+  <data name="PhotoUpdated" xml:space="preserve">
+    <value>Photo uploaded successfully.</value>
   </data>
   <data name="RelatedPersonIdInvalid" xml:space="preserve">
     <value>Related person identifier must be a positive integer.</value>

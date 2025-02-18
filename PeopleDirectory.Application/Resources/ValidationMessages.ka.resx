@@ -153,6 +153,18 @@
   <data name="PersonalIdRequired" xml:space="preserve">
     <value>პირადი ნომრის მითითება აუცილებელია.</value>
   </data>
+  <data name="PersonAlreadyExists" xml:space="preserve">
+    <value>ფიზიკური პირი უკვე არსებობს.</value>
+  </data>
+  <data name="PersonDeleted" xml:space="preserve">
+    <value>ფიზიკური პირი წარმატებით წაიშალა.</value>
+  </data>
+  <data name="PersonDoesNotExist" xml:space="preserve">
+    <value>ფიზიკური პირი ვერ მოიძებნა.</value>
+  </data>
+  <data name="PersonUpdated" xml:space="preserve">
+    <value>ფიზიკური პირის მონაცემები წარმატებით შეიცვალა.</value>
+  </data>
   <data name="PhoneNumberLength" xml:space="preserve">
     <value>ტელეფონის ნომრის სიბოლოების რაოდენობა უნდა იყოს 4-ს და 50-ს შორის</value>
   </data>
@@ -161,6 +173,9 @@
   </data>
   <data name="PhoneTypeRequired" xml:space="preserve">
     <value>ტელეფონის ტიპის მითითება აუცილებელია.</value>
+  </data>
+  <data name="PhotoUpdated" xml:space="preserve">
+    <value>ფოტო წარმატებით აიტვირთა.</value>
   </data>
   <data name="RelatedPersonIdInvalid" xml:space="preserve">
     <value>დაკავშირებული პირის აიდი აუცილებლად დადებითი რიცხვი უნდა იყოს.</value>

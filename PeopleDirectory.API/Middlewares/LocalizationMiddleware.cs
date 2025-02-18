@@ -13,7 +13,7 @@ namespace PeopleDirectory.API.Middlewares
 
         public async Task Invoke(HttpContext context)
         {
-            var cultureQuery = context.Request.Headers["Accept-Language"].ToString();
+            var cultureQuery = context.Request.Headers.AcceptLanguage.ToString();
             var culture = !string.IsNullOrEmpty(cultureQuery) ? cultureQuery.Split(',')[0] : "en";
 
             var supportedCultures = new[] { "en", "ka" };

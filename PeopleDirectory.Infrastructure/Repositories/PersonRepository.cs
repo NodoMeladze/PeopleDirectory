@@ -49,41 +49,14 @@ namespace PeopleDirectory.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task UpdatePhotoAsync(int personId, string photoPath)
+        public async Task<List<Person>> GetAllPersonsAsync()
         {
-            var person = await _dbSet.FindAsync(personId);
-            if (person != null)
-            {
-                person.PhotoPath = photoPath;
-                person.ModifiedDate = DateTime.UtcNow;
-                _context.Entry(person).State = EntityState.Modified;
-            }
-        }
-
-        public async Task AddRelatedPersonAsync(int personId, RelatedPerson related)
-        {
-            var person = await _dbSet.Include(p => p.RelatedPersons).FirstOrDefaultAsync(p => p.Id == personId);
-            if (person != null && !person.RelatedPersons.Any(rp => rp.RelatedPersonId == related.RelatedPersonId))
-            {
-                person.RelatedPersons.Add(related);
-                person.ModifiedDate = DateTime.UtcNow;
-                _context.Entry(person).State = EntityState.Modified;
-            }
-        }
-
-        public async Task RemoveRelatedPersonAsync(int personId, int relatedPersonId)
-        {
-            var person = await _dbSet.Include(p => p.RelatedPersons).FirstOrDefaultAsync(p => p.Id == personId);
-            if (person != null)
-            {
-                var related = person.RelatedPersons.FirstOrDefault(rp => rp.RelatedPersonId == relatedPersonId);
-                if (related != null)
-                {
-                    person.RelatedPersons.Remove(related);
-                    person.ModifiedDate = DateTime.UtcNow;
-                    _context.Entry(person).State = EntityState.Modified;
-                }
-            }
+            return await _dbSet
+                .Include(p => p.PhoneNumbers)
+                .Include(p => p.City)
+                .Include(p => p.RelatedPersons)
+                    .ThenInclude(rp => rp.Related)
+                .ToListAsync();
         }
 
         public async Task<Person?> GetByPersonalIdAsync(string personalId)

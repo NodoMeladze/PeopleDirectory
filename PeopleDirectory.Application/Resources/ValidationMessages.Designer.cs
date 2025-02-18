@@ -169,6 +169,42 @@ namespace PeopleDirectory.Application.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Person already exists..
+        /// </summary>
+        public static string PersonAlreadyExists {
+            get {
+                return ResourceManager.GetString("PersonAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Person deleted successfully..
+        /// </summary>
+        public static string PersonDeleted {
+            get {
+                return ResourceManager.GetString("PersonDeleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Person does not exist..
+        /// </summary>
+        public static string PersonDoesNotExist {
+            get {
+                return ResourceManager.GetString("PersonDoesNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Person updated successfully..
+        /// </summary>
+        public static string PersonUpdated {
+            get {
+                return ResourceManager.GetString("PersonUpdated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Phone number must be between 4 and 50 characters..
         /// </summary>
         public static string PhoneNumberLength {
@@ -192,6 +228,15 @@ namespace PeopleDirectory.Application.Resources {
         public static string PhoneTypeRequired {
             get {
                 return ResourceManager.GetString("PhoneTypeRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Photo uploaded successfully..
+        /// </summary>
+        public static string PhotoUpdated {
+            get {
+                return ResourceManager.GetString("PhotoUpdated", resourceCulture);
             }
         }
         
